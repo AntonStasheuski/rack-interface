@@ -1,21 +1,26 @@
 # frozen_string_literal: true
-
+require 'pry'
 class App
   def call(env)
-    response = Rack::Response.new
-    response['Content-Type'] = 'text/plain'
     if correct_path?(env)
       time_formatter = TimeConverter.new(env)
-      response.write(time_formatter.call)
-      response.status = time_formatter.success ? 200 : 400
+      body = time_formatter.call
+      status = time_formatter.success? ? 200 : 400
+      response(status, body)
     else
-      response.status = 404
-      response.write('Unknown requset path')
+      response(404, 'Unknown request path')
     end
-    response.finish
   end
 
   private
+
+  def response(code, message)
+    response = Rack::Response.new
+    response['Content-Type'] = 'text/plain'
+    response.status = code
+    response.write message
+    response.finish
+  end
 
   def correct_path?(env)
     env['REQUEST_PATH'] =~ %r{^/time$}
